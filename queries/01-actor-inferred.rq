@@ -1,6 +1,6 @@
-# titulo: Tipagem inferida de :Actor (nenhuma tripla rdf:type :Actor nos mapeamentos)
-# pergunta: Quantos atores existem na base?
-# mostrar-sql: sim
+# title: Inferred typing of :Actor (no rdf:type :Actor triple in the mappings)
+# question: How many actors are there in the database?
+# show-sql: yes
 # sql: SELECT COUNT(DISTINCT actor_id) AS n FROM roles
 PREFIX : <http://www.example.org/imdb#>
 

@@ -1,5 +1,5 @@
-# titulo: Filmes com Samuel L. Jackson e Uma Thurman juntos, com diretor e ano (mais novo primeiro)
-# pergunta: Em quais filmes os atores Samuel L. Jackson e Uma Thurman atuaram juntos, com os respectivos diretores e anos de lançamento, do mais novo para o mais antigo?
+# title: Films with Samuel L. Jackson and Uma Thurman together, with director and year (newest first)
+# question: In which films did the actors Samuel L. Jackson and Uma Thurman act together, with their respective directors and release years, from the newest to the oldest?
 # sql: SELECT m.name AS title, m.year AS year, d.first_name AS given, d.last_name AS family FROM movies m JOIN (SELECT DISTINCT actor_id, movie_id FROM roles) rx ON rx.movie_id = m.id JOIN actors ax ON ax.id = rx.actor_id JOIN (SELECT DISTINCT actor_id, movie_id FROM roles) ry ON ry.movie_id = m.id JOIN actors ay ON ay.id = ry.actor_id JOIN movies_directors md ON md.movie_id = m.id JOIN directors d ON d.id = md.director_id WHERE ax.first_name = 'Samuel L.' AND ax.last_name = 'Jackson' AND ay.first_name = 'Uma' AND ay.last_name = 'Thurman'
 PREFIX :     <http://www.example.org/imdb#>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>

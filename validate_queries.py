@@ -1,16 +1,16 @@
-"""Roda as queries SPARQL de queries/*.rq contra o endpoint Ontop e as valida.
+"""Run the SPARQL queries in queries/*.rq against the Ontop endpoint and validate them.
 
-Cada arquivo .rq pode trazer, em comentários de cabeçalho:
-    # titulo: descrição exibida
-    # sql: consulta SQL equivalente no Postgres (gabarito)
-    # mostrar-sql: sim   -> exibe a reformulação SQL gerada pelo Ontop
+Each .rq file may carry, in header comments:
+    # title: the description shown
+    # sql: the equivalent SQL query on Postgres (the reference)
+    # show-sql: yes   -> also prints the SQL reformulation produced by Ontop
 
-Antes das queries, verifica que os mapeamentos não afirmam rdf:type :Actor
-nem :Director — ou seja, que esses tipos só podem vir do rewriting.
+Before the queries, it checks that the mappings do not assert rdf:type :Actor
+or :Director - that is, that those types can only come from the rewriting.
 
-Uso:
+Usage:
     docker compose up -d
-    uv run validate_queries.py [filtro]
+    uv run validate_queries.py [filter]
 """
 
 import io
@@ -32,15 +32,15 @@ POSTGRES_URI = os.environ.get(
 )
 R2RML = Namespace("http://www.w3.org/ns/r2rml#")
 IMDB = Namespace("http://www.example.org/imdb#")
-# Tipos que só podem aparecer por rewriting, nunca afirmados pelo mapeamento.
+# Types that may only show up through rewriting, never asserted by the mapping.
 INFERRED_ONLY = {IMDB.Actor: ":Actor", IMDB.Director: ":Director"}
 
 
 def check_no_materialized_types(mapping: Path) -> bool:
-    """Confere que os mapeamentos não afirmam os tipos que devem vir do rewriting.
+    """Check that the mappings do not assert the types that must come from rewriting.
 
-    Em R2RML uma classe pode ser afirmada de duas formas: `rr:class` no subjectMap,
-    ou um predicateObjectMap com `rr:predicate rdf:type` — as duas são verificadas.
+    In R2RML a class can be asserted in two ways: `rr:class` on the subjectMap,
+    or a predicateObjectMap with `rr:predicate rdf:type` - both are checked.
     """
     g = Graph().parse(mapping)
     asserted = set(g.objects(None, R2RML["class"]))
@@ -50,17 +50,17 @@ def check_no_materialized_types(mapping: Path) -> bool:
             asserted |= set(g.objects(om, R2RML.constant))
     hits = sorted(INFERRED_ONLY[c] for c in asserted & INFERRED_ONLY.keys())
     for h in hits:
-        print(f"  tipo materializado encontrado no mapeamento: {h}")
+        print(f"  materialized type found in the mapping: {h}")
     return not hits
 
 
 def headers(text: str) -> dict[str, str]:
-    """Extrai os metadados dos comentários '# chave: valor' no topo do .rq."""
+    """Extract the metadata from the '# key: value' comments at the top of a .rq file."""
     return dict(re.findall(r"^#\s*([\w-]+):\s*(.+)$", text, flags=re.MULTILINE))
 
 
 def http(path: str, params: dict[str, str], accept: str, post: bool = False) -> str:
-    """Faz uma requisição HTTP ao endpoint Ontop e devolve o corpo da resposta."""
+    """Make an HTTP request to the Ontop endpoint and return the response body."""
     data = urllib.parse.urlencode(params)
     if post:
         req = urllib.request.Request(
@@ -73,13 +73,13 @@ def http(path: str, params: dict[str, str], accept: str, post: bool = False) -> 
 
 
 def sparql(query: str) -> pl.DataFrame:
-    """Roda uma query SPARQL no endpoint e devolve o resultado como DataFrame."""
+    """Run a SPARQL query on the endpoint and return the result as a DataFrame."""
     body = http("/sparql", {"query": query}, "text/csv", post=True)
     return pl.read_csv(io.StringIO(body), infer_schema=False)
 
 
 def normalize(df: pl.DataFrame) -> list[tuple]:
-    """Comparação por multiconjunto; números comparados como float."""
+    """Multiset comparison; numbers are compared as floats."""
     cols = []
     for name in df.columns:
         as_str = df[name].cast(pl.String)
@@ -89,32 +89,32 @@ def normalize(df: pl.DataFrame) -> list[tuple]:
 
 
 def main():
-    filtro = sys.argv[1] if len(sys.argv) > 1 else ""
+    query_filter = sys.argv[1] if len(sys.argv) > 1 else ""
     pl.Config.set_tbl_rows(30)
     pl.Config.set_fmt_str_lengths(60)
     pl.Config.set_tbl_hide_dataframe_shape(True)
 
     ok = check_no_materialized_types(ROOT / "obda" / "imdb.r2rml.ttl")
     print(
-        f"[{'OK' if ok else 'FALHA'}] mapeamentos sem rdf:type "
+        f"[{'OK' if ok else 'FAIL'}] mappings free of rdf:type "
         f"{' / '.join(INFERRED_ONLY.values())}\n"
     )
 
     for path in sorted((ROOT / "queries").glob("*.rq")):
-        if filtro not in path.name:
+        if query_filter not in path.name:
             continue
         text = path.read_text()
         meta = headers(text)
-        print(f"=== {path.name}: {meta.get('titulo', '')}")
+        print(f"=== {path.name}: {meta.get('title', '')}")
 
         t0 = time.perf_counter()
         result = sparql(text)
         elapsed = time.perf_counter() - t0
         print(result)
 
-        if meta.get("mostrar-sql") == "sim":
+        if meta.get("show-sql") == "yes":
             reformulation = http("/ontop/reformulate", {"query": text}, "text/plain")
-            print("  SQL gerado pelo Ontop:")
+            print("  SQL generated by Ontop:")
             print("    " + reformulation.strip().replace("\n", "\n    "))
 
         if "sql" in meta:
@@ -122,14 +122,14 @@ def main():
             match = normalize(result) == normalize(expected)
             ok &= match
             print(
-                f"[{'OK' if match else 'FALHA'}] SPARQL ({result.height} linhas, "
-                f"{elapsed:.1f}s) == SQL gabarito ({expected.height} linhas)"
+                f"[{'OK' if match else 'FAIL'}] SPARQL ({result.height} rows, "
+                f"{elapsed:.1f}s) == reference SQL ({expected.height} rows)"
             )
             if not match:
                 print(expected)
         print()
 
-    print("TODAS AS VALIDAÇÕES PASSARAM" if ok else "HÁ VALIDAÇÕES COM FALHA")
+    print("ALL CHECKS PASSED" if ok else "SOME CHECKS FAILED")
     sys.exit(0 if ok else 1)
 
 

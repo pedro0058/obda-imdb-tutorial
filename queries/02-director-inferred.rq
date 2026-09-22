@@ -1,6 +1,6 @@
-# titulo: Tipagem inferida de :Director (domínios de :directed e :hasGenreAffinity)
-# pergunta: Quantos diretores existem?
-# mostrar-sql: sim
+# title: Inferred typing of :Director (domains of :directed and :hasGenreAffinity)
+# question: How many directors are there?
+# show-sql: yes
 # sql: SELECT COUNT(*) AS n FROM (SELECT director_id FROM movies_directors UNION SELECT director_id FROM directors_genres) t
 PREFIX : <http://www.example.org/imdb#>
 

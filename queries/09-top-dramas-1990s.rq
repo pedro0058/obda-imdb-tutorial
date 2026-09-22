@@ -1,5 +1,5 @@
-# titulo: 10 dramas dos anos 90 com maior nota (:hasGenre + :rank)
-# pergunta: Quais os 10 dramas dos anos 90 com maior nota?
+# title: 10 highest rated dramas of the 1990s (:hasGenre + :rank)
+# question: What are the 10 highest rated dramas from the 1990s?
 # sql: SELECT m.name AS title, m.year AS year, ROUND(m.rank::numeric, 1) AS rank FROM movies m JOIN movies_genres g ON g.movie_id = m.id WHERE g.genre = 'Drama' AND m.year BETWEEN 1990 AND 1999 AND m.rank IS NOT NULL ORDER BY ROUND(m.rank::numeric, 1) DESC, m.name COLLATE "C", ('http://www.example.org/imdb/data/movie/' || m.id) COLLATE "C" LIMIT 10
 PREFIX :     <http://www.example.org/imdb#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>

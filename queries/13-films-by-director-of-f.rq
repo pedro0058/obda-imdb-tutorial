@@ -1,5 +1,5 @@
-# titulo: Filmes do diretor de Pulp Fiction com Samuel L. Jackson ou Uma Thurman no elenco
-# pergunta: Quais filmes do diretor do filme Pulp Fiction possuem Samuel L. Jackson ou Uma Thurman como atores?
+# title: Films by the director of Pulp Fiction featuring Samuel L. Jackson or Uma Thurman
+# question: Which films by the director of the film Pulp Fiction have Samuel L. Jackson or Uma Thurman as actors?
 # sql: SELECT DISTINCT m.name AS title, m.year AS year FROM movies f JOIN movies_directors mdf ON mdf.movie_id = f.id JOIN movies_directors md ON md.director_id = mdf.director_id JOIN movies m ON m.id = md.movie_id JOIN roles r ON r.movie_id = m.id JOIN actors a ON a.id = r.actor_id WHERE f.name = 'Pulp Fiction' AND ((a.first_name = 'Samuel L.' AND a.last_name = 'Jackson') OR (a.first_name = 'Uma' AND a.last_name = 'Thurman'))
 PREFIX :     <http://www.example.org/imdb#>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>

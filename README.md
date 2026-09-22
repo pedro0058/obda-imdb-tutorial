@@ -3,7 +3,7 @@
 A study reproduction of Part 2 of the tutorial *"From Description Logics to (Virtual)
 Knowledge Graphs"* (Renata Wassermann and João Lima, USP): a complete
 **Ontology-Based Data Access** pipeline over a real relational database, with a local
-LLM layer that translates questions in Portuguese into SPARQL.
+LLM layer that translates natural language questions into SPARQL.
 
 ```
 public MariaDB (imdb_ijs) ──Polars──▶ local Postgres ◀──SQL── Ontop ◀──SPARQL── nl_query.py ◀── question
@@ -127,8 +127,8 @@ docker exec imdb-postgres psql -U imdb -d imdb -c '\d roles'
   are `xsd:decimal`.
 - **Documentation good practices** (W3C, OOPS!, Garijo & Poveda-Villalón 2020): ontology
   metadata (`dcterms:title`, `description`, `creator`, `license`, `created`, `source`,
-  `owl:versionIRI`, `vann:preferredNamespacePrefix`), `rdfs:label` in Portuguese and
-  English and `rdfs:comment` on every local term; classes in CamelCase and properties in
+  `owl:versionIRI`, `vann:preferredNamespacePrefix`), `rdfs:label` and `rdfs:comment` in
+  Portuguese and English on every local term; classes in CamelCase and properties in
   lowerCamelCase.
 
 ### Validating the ontology
@@ -265,7 +265,7 @@ The script first confirms that the mappings do not assert `rdf:type :Actor` or
 `rdf:type :Director` — neither through `rr:class`, nor through an `rr:predicateObjectMap`
 with `rr:predicate rdf:type`. It then runs each `queries/*.rq` against the endpoint and
 compares the result (as a multiset) with the reference SQL in the `# sql:` header.
-Queries carrying `# mostrar-sql: sim` also print Ontop's SQL reformulation.
+Queries carrying `# show-sql: yes` also print Ontop's SQL reformulation.
 
 | # | Query | Exercises | Result |
 |---|---|---|---|
@@ -293,47 +293,46 @@ generated SQL is
 ## 5. Natural language questions (Ollama)
 
 Inference is 100% local through Ollama — no cloud APIs. Default model:
-`gemma4:12b-nvfp4`, with *thinking* disabled (`think=False`) and temperature 0. Questions
-are asked in Portuguese, which is the language the system prompt is written in.
+`gemma4:12b-nvfp4`, with *thinking* disabled (`think=False`) and temperature 0.
 
 ```bash
 ollama pull gemma4:12b-nvfp4
-uv run nl_query.py "Quem dirigiu Fargo, de 1996?"
+uv run nl_query.py "Who directed Fargo, from 1996?"
 uv run nl_query.py                          # interactive mode
-uv run nl_query.py --sem-sparql "..."       # answer only
-uv run nl_query.py --avaliar                # evaluation against the reference SQL
+uv run nl_query.py --no-sparql "..."        # answer only
+uv run nl_query.py --evaluate               # evaluation against the reference SQL
 OLLAMA_MODEL=gemma4:e4b-nvfp4 uv run nl_query.py "..."   # another model
 ```
 
 Flow:
 
 1. The system prompt carries a schema summary **generated from the ontology itself**
-   (rdflib), the list of genre labels queried from the endpoint, rules and query
-   patterns. Two fixed few-shot examples come along (`FEWSHOT` in `nl_query.py`), as
+   (rdflib, taking the English `rdfs:comment` of each term), the list of genre labels
+   queried from the endpoint, rules and query patterns. Two fixed few-shot examples come along (`FEWSHOT` in `nl_query.py`), as
    conversation turns: query 11, which covers the n-ary `:Performance` relation with
    `OPTIONAL`, and query 15, which covers `COUNT`/`GROUP BY` with `MAX` in a subquery.
-   The remaining `queries/*.rq` serve as references for `--avaliar`, but do not enter the
-   prompt — so adding a validation query does not make every question more expensive.
+   The remaining `queries/*.rq` serve as references for `--evaluate`, but do not enter
+   the prompt — so adding a validation query does not make every question more expensive.
 2. The model returns structured JSON `{"sparql": ...}`; the script normalizes the
    prefixes (adding the missing ones and rewriting those that arrive with a divergent
    IRI, which raise no syntax error but make the query match nothing), enforces
    `LIMIT 100` and validates the syntax with rdflib.
 3. The query runs on Ontop. A syntax error, an endpoint error or an empty result goes
    back to the model for correction (up to 3 attempts).
-4. A second call writes the answer in Portuguese using **only** the results.
+4. A second call writes the answer using **only** the results.
 
 Example:
 
 ```
-$ uv run nl_query.py "Quantos filmes de terror foram lançados em 1980?"
-SELECT (COUNT(DISTINCT ?m) AS ?n)
+$ uv run nl_query.py "How many horror films were released in 1980?"
+SELECT (COUNT(DISTINCT ?m) AS ?count)
 WHERE { ?m :hasGenre ?g ; :releaseYear 1980 . ?g rdfs:label "Horror"@en . }
-Resposta: Foram lançados 102 filmes de terror em 1980.
+Answer: There were 102 horror films released in 1980.
 ```
 
 ### Evaluation
 
-`--avaliar` performs *leave-one-out*: each question from `queries/*.rq` is answered
+`--evaluate` performs *leave-one-out*: each question from `queries/*.rq` is answered
 without its own query among the examples, and the result is compared with the reference
 SQL at two levels:
 
@@ -342,10 +341,10 @@ SQL at two levels:
   and last name concatenated, numeric columns omitted), but rejecting IRIs in place of
   names or differing values.
 
-Result with `gemma4:12b-nvfp4`: **9/16 identical** to the reference and **10/16 with
+Result with `gemma4:12b-nvfp4`: **10/16 identical** to the reference and **11/16 with
 correct content**. No generated query was rejected for syntax. Questions solved on the
-first attempt take 5 to 36 s each (Apple M4 16 GB, generation plus SPARQL execution;
-query 05 alone takes ~27 s in Ontop).
+first attempt take 4 to 44 s each (Apple M4 16 GB, generation plus SPARQL execution;
+query 05 alone takes ~27 s in Ontop on a cold cache).
 
 The cases that did not match exactly, and what the model got wrong in each:
 
@@ -354,9 +353,8 @@ The cases that did not match exactly, and what the model got wrong in each:
 | 02 | counted through `:hasDirector` instead of `?x a :Director` |
 | 08 | aggregate subquery using a variable from the outer pattern, which SPARQL scoping does not propagate |
 | 09 | omitted the `?year` column (formatting only: the content matches) |
-| 12, 13 | name literal not in the shape stored in the database: `"Samuel"` instead of `"Samuel L."`, `" Thurman"` with a leading space |
-| 14 | `ORDER BY ?year` with `?year` outside the `SELECT DISTINCT` — rejected by the endpoint |
-| 15 | ordered by descending `COUNT` without isolating the maximum |
+| 13, 14 | name literal with a stray leading space, `" Thurman"` |
+| 15 | `LIMIT 1` over a descending `COUNT`, returning one of the two directors tied at the maximum |
 
 The pattern is clear: the vocabulary part (which class, which property, which direction
 of the inverse) comes out right, because it comes from the ontology in the prompt. What

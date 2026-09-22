@@ -1,5 +1,5 @@
-# titulo: Quentin Tarantino — afinidade de gênero (escore) vs. nº de filmes dirigidos no gênero
-# pergunta: Quais as afinidades de gênero de Quentin Tarantino, com escore e número de filmes que ele dirigiu em cada gênero?
+# title: Quentin Tarantino - genre affinity (score) vs. number of films directed in the genre
+# question: What are Quentin Tarantino's genre affinities, with the score and the number of films he directed in each genre?
 # sql: SELECT g.genre AS genre, g.prob::numeric AS score, (SELECT COUNT(*) FROM movies_directors md JOIN movies_genres mg ON mg.movie_id = md.movie_id WHERE md.director_id = d.id AND mg.genre = g.genre) AS films FROM directors d JOIN directors_genres g ON g.director_id = d.id WHERE d.first_name = 'Quentin' AND d.last_name = 'Tarantino'
 PREFIX :     <http://www.example.org/imdb#>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>

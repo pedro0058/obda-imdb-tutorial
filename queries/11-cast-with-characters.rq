@@ -1,5 +1,5 @@
-# titulo: Elenco de Reservoir Dogs com personagens, ordenado por nome e sobrenome
-# pergunta: Quais os primeiros nomes e últimos nomes dos atores que participaram do filme Reservoir Dogs, em ordem lexicográfica, com seus respectivos personagens?
+# title: Cast of Reservoir Dogs with characters, ordered by first and last name
+# question: What are the first names and last names of the actors who took part in the film Reservoir Dogs, in lexicographic order, with their respective characters?
 # sql: SELECT a.first_name AS given, a.last_name AS family, NULLIF(r.role, '') AS character FROM movies m JOIN roles r ON r.movie_id = m.id JOIN actors a ON a.id = r.actor_id WHERE m.name = 'Reservoir Dogs'
 PREFIX :     <http://www.example.org/imdb#>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>

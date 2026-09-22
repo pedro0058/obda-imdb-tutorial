@@ -9,5 +9,5 @@ wheels/
 # Virtual environments
 .venv
 
-# Driver JDBC baixado pelo docker compose
+# JDBC driver downloaded by docker compose
 jdbc/

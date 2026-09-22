@@ -1,5 +1,5 @@
-# titulo: Elenco e personagens de Pulp Fiction (1994) via :hasActor (inversa) e :Performance (n-ária)
-# pergunta: Quem atuou em Pulp Fiction (1994) e quais personagens interpretou?
+# title: Cast and characters of Pulp Fiction (1994) through :hasActor (inverse) and :Performance (n-ary)
+# question: Who acted in Pulp Fiction (1994) and which characters did they play?
 # sql: SELECT a.first_name AS given, a.last_name AS family, r.role AS character FROM movies m JOIN roles r ON r.movie_id = m.id JOIN actors a ON a.id = r.actor_id WHERE m.name = 'Pulp Fiction' AND m.year = 1994 AND r.role <> ''
 PREFIX :     <http://www.example.org/imdb#>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>

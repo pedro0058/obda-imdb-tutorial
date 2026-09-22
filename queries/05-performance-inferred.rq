@@ -1,5 +1,5 @@
-# titulo: Tipagem inferida de :Performance (domínio de :performer / :performanceIn)
-# pergunta: Quantas atuações estão registradas?
+# title: Inferred typing of :Performance (domain of :performer / :performanceIn)
+# question: How many performances are recorded?
 # sql: SELECT COUNT(*) AS n FROM roles
 PREFIX : <http://www.example.org/imdb#>
 

@@ -1,5 +1,5 @@
-# titulo: Diretores de Fargo (1996) via :hasDirector (inversa de :directed)
-# pergunta: Quem dirigiu Fargo, de 1996?
+# title: Directors of Fargo (1996) through :hasDirector (inverse of :directed)
+# question: Who directed Fargo, from 1996?
 # sql: SELECT d.first_name AS given, d.last_name AS family FROM movies m JOIN movies_directors md ON md.movie_id = m.id JOIN directors d ON d.id = md.director_id WHERE m.name = 'Fargo' AND m.year = 1996
 PREFIX :     <http://www.example.org/imdb#>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>

@@ -1,10 +1,10 @@
-"""Copia o banco imdb_ijs (MariaDB público da CTU Prague) para o Postgres local.
+"""Copy the imdb_ijs database (CTU Prague's public MariaDB) into the local Postgres.
 
-Tabelas, colunas, chaves primárias e estrangeiras são descobertas via
-information_schema — nenhum nome de tabela é hardcoded. Polars é a camada de
-transporte: leitura com connectorx, escrita com ADBC (COPY binário).
+Tables, columns, primary and foreign keys are discovered through
+information_schema - no table name is hardcoded. Polars is the transport layer:
+reading with connectorx, writing with ADBC (binary COPY).
 
-Uso:
+Usage:
     docker compose up -d
     uv run imdb_to_postgres.py
 """
@@ -25,12 +25,12 @@ POSTGRES_URI = os.environ.get(
     "POSTGRES_URI", "postgresql://imdb:imdb@localhost:5432/imdb"
 )
 
-# Tabelas acima deste tamanho são lidas em paralelo, particionadas pela PK.
+# Tables larger than this are read in parallel, partitioned by the PK.
 PARTITION_THRESHOLD = 200_000
 PARTITION_NUM = 4
 
-# tipo MariaDB -> (tipo Postgres, dtype Polars). Os dtypes precisam casar com o
-# DDL, pois o COPY binário do ADBC não faz coerção de tipos.
+# MariaDB type -> (Postgres type, Polars dtype). The dtypes must match the DDL,
+# because ADBC's binary COPY does not coerce types.
 TYPE_MAP: dict[str, tuple[str, pl.DataType]] = {
     "tinyint": ("smallint", pl.Int16),
     "smallint": ("smallint", pl.Int16),
@@ -52,12 +52,12 @@ TYPE_MAP: dict[str, tuple[str, pl.DataType]] = {
 
 
 def maria(query: str) -> pl.DataFrame:
-    """Executa uma consulta no MariaDB de origem e devolve o resultado."""
+    """Run a query on the source MariaDB and return the result."""
     return pl.read_database_uri(query, MARIADB_URI)
 
 
 def discover() -> tuple[pl.DataFrame, pl.DataFrame, pl.DataFrame]:
-    """Lê do information_schema da origem: tabelas, colunas e chaves (PK/FK)."""
+    """Read from the source information_schema: tables, columns and keys (PK/FK)."""
     tables = maria(
         f"""
         SELECT table_name, table_rows
@@ -88,12 +88,12 @@ def discover() -> tuple[pl.DataFrame, pl.DataFrame, pl.DataFrame]:
 
 
 def quote(ident: str) -> str:
-    """Protege um identificador para uso no SQL do Postgres."""
+    """Quote an identifier for use in Postgres SQL."""
     return '"' + ident.replace('"', '""') + '"'
 
 
 def pg_type(row: dict) -> tuple[str, pl.DataType]:
-    """Traduz uma coluna do MariaDB para (tipo Postgres, dtype Polars)."""
+    """Translate a MariaDB column into (Postgres type, Polars dtype)."""
     base, dtype = TYPE_MAP.get(row["data_type"], ("text", pl.String))
     if base in ("varchar", "char") and row["character_maximum_length"]:
         base = f"{base}({int(row['character_maximum_length'])})"
@@ -101,10 +101,10 @@ def pg_type(row: dict) -> tuple[str, pl.DataType]:
 
 
 def copy_table(conn, table: str, cols: pl.DataFrame, pk_cols: list[str], est_rows: int):
-    """Recria a tabela no Postgres e transfere seus dados da origem.
+    """Recreate the table on Postgres and transfer its data from the source.
 
-    Tabelas grandes são lidas em paralelo, particionadas pela primeira coluna
-    inteira da PK; a escrita usa COPY binário via ADBC.
+    Large tables are read in parallel, partitioned by the first integer column
+    of the PK; writing uses binary COPY through ADBC.
     """
     col_rows = cols.to_dicts()
     ddl_cols = []
@@ -123,7 +123,7 @@ def copy_table(conn, table: str, cols: pl.DataFrame, pk_cols: list[str], est_row
     select_cols = ", ".join(f"`{c['column_name']}`" for c in col_rows)
     query = f"SELECT {select_cols} FROM `{table}`"
 
-    # Particiona pela primeira coluna inteira da PK, se a tabela for grande.
+    # Partition by the first integer column of the PK, if the table is large.
     partition_on = next(
         (c for c in pk_cols if schema[c] in (pl.Int16, pl.Int32, pl.Int64)), None
     )
@@ -148,13 +148,13 @@ def copy_table(conn, table: str, cols: pl.DataFrame, pk_cols: list[str], est_row
     t_write = time.perf_counter() - t0
 
     print(
-        f"  {table:<20} {df.height:>10,} linhas  "
-        f"(leitura {t_read:5.1f}s, escrita {t_write:5.1f}s)"
+        f"  {table:<20} {df.height:>10,} rows  "
+        f"(read {t_read:5.1f}s, write {t_write:5.1f}s)"
     )
 
 
 def add_constraints(conn, keys: pl.DataFrame):
-    """Recria as chaves primárias e estrangeiras depois da carga dos dados."""
+    """Recreate the primary and foreign keys after the data load."""
     grouped = (
         keys.group_by("table_name", "constraint_name", maintain_order=True)
         .agg(
@@ -164,7 +164,7 @@ def add_constraints(conn, keys: pl.DataFrame):
         )
         .to_dicts()
     )
-    # PKs primeiro, FKs depois (FKs dependem das PKs/uniques referenciadas).
+    # PKs first, FKs afterwards (FKs depend on the referenced PKs/uniques).
     for g in sorted(grouped, key=lambda g: g["constraint_name"] != "PRIMARY"):
         table, cols = g["table_name"], ", ".join(map(quote, g["column_name"]))
         if g["constraint_name"] == "PRIMARY":
@@ -178,24 +178,24 @@ def add_constraints(conn, keys: pl.DataFrame):
                 f"FOREIGN KEY ({cols}) REFERENCES {quote(g['referenced_table_name'])} ({refs})"
             )
         else:
-            continue  # índices UNIQUE não-PK: não usados neste tutorial
+            continue  # non-PK UNIQUE indexes: not used in this tutorial
         try:
             with conn.cursor() as cur:
                 cur.execute(sql)
             conn.commit()
             print(f"  ok    {sql}")
-        except Exception as e:  # ex.: FK violada por linhas órfãs na fonte
+        except Exception as e:  # e.g. an FK violated by orphan rows in the source
             conn.rollback()
-            print(f"  FALHA {sql}\n        {str(e).splitlines()[0]}")
+            print(f"  FAIL  {sql}\n        {str(e).splitlines()[0]}")
 
 
 def main():
-    print(f"Descobrindo schema em {MARIADB_SCHEMA}...")
+    print(f"Discovering the schema in {MARIADB_SCHEMA}...")
     tables, columns, keys = discover()
-    print(f"  {tables.height} tabelas: {', '.join(tables['table_name'])}")
+    print(f"  {tables.height} tables: {', '.join(tables['table_name'])}")
 
     with pg.connect(POSTGRES_URI) as conn:
-        print("Copiando tabelas...")
+        print("Copying tables...")
         for t in tables.to_dicts():
             name = t["table_name"]
             pk_cols = (
@@ -214,13 +214,13 @@ def main():
                 int(t["table_rows"] or 0),
             )
 
-        print("Criando chaves primárias e estrangeiras...")
+        print("Creating primary and foreign keys...")
         add_constraints(conn, keys)
 
         with conn.cursor() as cur:
             cur.execute("ANALYZE")
         conn.commit()
-    print("Concluído.")
+    print("Done.")
 
 
 if __name__ == "__main__":

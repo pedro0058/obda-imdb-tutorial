@@ -16,7 +16,7 @@ services:
       timeout: 5s
       retries: 10
 
-  # Baixa o driver JDBC do Postgres (a imagem do Ontop não inclui drivers).
+  # Downloads the Postgres JDBC driver (the Ontop image ships no drivers).
   ontop-jdbc:
     image: curlimages/curl:8.16.0
     user: "0:0"

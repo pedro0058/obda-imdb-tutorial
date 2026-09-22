@@ -1,5 +1,5 @@
-# titulo: Títulos dirigidos por Quentin Tarantino, em ordem lexicográfica
-# pergunta: Quais os títulos dos filmes dirigidos por Quentin Tarantino, em ordem lexicográfica?
+# title: Titles directed by Quentin Tarantino, in lexicographic order
+# question: What are the titles of the films directed by Quentin Tarantino, in lexicographic order?
 # sql: SELECT m.name AS title FROM directors d JOIN movies_directors md ON md.director_id = d.id JOIN movies m ON m.id = md.movie_id WHERE d.first_name = 'Quentin' AND d.last_name = 'Tarantino'
 PREFIX :     <http://www.example.org/imdb#>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
