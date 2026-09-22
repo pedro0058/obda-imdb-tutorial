@@ -1,0 +1,56 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: imdb-postgres
+    environment:
+      POSTGRES_USER: imdb
+      POSTGRES_PASSWORD: imdb
+      POSTGRES_DB: imdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - imdb_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U imdb -d imdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Baixa o driver JDBC do Postgres (a imagem do Ontop não inclui drivers).
+  ontop-jdbc:
+    image: curlimages/curl:8.16.0
+    user: "0:0"
+    command:
+      - sh
+      - -c
+      - >-
+        test -f /jdbc/postgresql-42.7.13.jar ||
+        curl -fsSL -o /jdbc/postgresql-42.7.13.jar
+        https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.13/postgresql-42.7.13.jar
+    volumes:
+      - ./jdbc:/jdbc
+
+  ontop:
+    image: ontop/ontop:5.5.0
+    container_name: imdb-ontop
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ontop-jdbc:
+        condition: service_completed_successfully
+    environment:
+      ONTOP_JAVA_ARGS: "-Xmx2g"
+    command:
+      - --ontology=/opt/ontop/input/imdb-ontology.ttl
+      - --mapping=/opt/ontop/input/imdb.r2rml.ttl
+      - --properties=/opt/ontop/input/imdb.properties
+      - --cors-allowed-origins=*
+      - --dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./obda:/opt/ontop/input:ro
+      - ./jdbc:/opt/ontop/jdbc:ro
+
+volumes:
+  imdb_pgdata:

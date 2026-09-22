@@ -1,0 +1,7 @@
+# titulo: foaf:Person via subclasse (:Actor, :Director) + diretores afirmados
+# pergunta: Quantas pessoas estão cadastradas?
+# sql: SELECT (SELECT COUNT(DISTINCT actor_id) FROM roles) + (SELECT COUNT(*) FROM directors) AS n
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT (COUNT(DISTINCT ?x) AS ?n)
+WHERE { ?x a foaf:Person }

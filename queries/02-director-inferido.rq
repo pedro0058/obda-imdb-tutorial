@@ -1,0 +1,8 @@
+# titulo: Tipagem inferida de :Director (domínios de :directed e :hasGenreAffinity)
+# pergunta: Quantos diretores existem?
+# mostrar-sql: sim
+# sql: SELECT COUNT(*) AS n FROM (SELECT director_id FROM movies_directors UNION SELECT director_id FROM directors_genres) t
+PREFIX : <http://www.example.org/imdb#>
+
+SELECT (COUNT(DISTINCT ?x) AS ?n)
+WHERE { ?x a :Director }

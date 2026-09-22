@@ -1,0 +1,7 @@
+# titulo: Tipagem inferida de :Genre (range de :hasGenre, :hasGenreAffinity, :affinityGenre)
+# pergunta: Quantos gêneros cinematográficos existem?
+# sql: SELECT COUNT(*) AS n FROM (SELECT genre FROM movies_genres UNION SELECT genre FROM directors_genres) t
+PREFIX : <http://www.example.org/imdb#>
+
+SELECT (COUNT(DISTINCT ?g) AS ?n)
+WHERE { ?g a :Genre }

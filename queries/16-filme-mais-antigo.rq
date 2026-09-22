@@ -1,0 +1,30 @@
+# titulo: Filme mais antigo em que Uma Thurman atuou, com ano e personagem (todos em caso de empate)
+# pergunta: Qual o filme mais antigo em que a atriz Uma Thurman atuou, em que ano foi lançado e qual era seu personagem?
+# sql: SELECT m.name AS title, m.year AS year, NULLIF(r.role, '') AS character FROM actors a JOIN roles r ON r.actor_id = a.id JOIN movies m ON m.id = r.movie_id WHERE a.first_name = 'Uma' AND a.last_name = 'Thurman' AND m.year = (SELECT min(m2.year) FROM movies m2 JOIN roles r2 ON r2.movie_id = m2.id JOIN actors a2 ON a2.id = r2.actor_id WHERE a2.first_name = 'Uma' AND a2.last_name = 'Thurman')
+PREFIX :     <http://www.example.org/imdb#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?title ?year ?character
+WHERE {
+  {
+    SELECT (MIN(?y) AS ?min)
+    WHERE {
+      ?a2 foaf:givenName "Uma" ;
+          foaf:familyName "Thurman" ;
+          :actedIn ?m2 .
+      ?m2 :releaseYear ?y .
+    }
+  }
+  ?a foaf:givenName "Uma" ;
+     foaf:familyName "Thurman" ;
+     :actedIn ?m .
+  ?m :title ?title ;
+     :releaseYear ?year .
+  OPTIONAL {
+    ?p :performer ?a ;
+       :performanceIn ?m ;
+       :characterName ?character .
+  }
+  FILTER(?year = ?min)
+}
+ORDER BY ?title ?character

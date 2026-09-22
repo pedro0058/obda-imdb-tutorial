@@ -1,0 +1,36 @@
+# titulo: Diretor que mais dirigiu filmes com Samuel L. Jackson (todos os empatados no máximo)
+# pergunta: Qual o diretor que mais dirigiu filmes em que aparece o ator de primeiro nome Samuel L. e último nome Jackson?
+# sql: WITH cnt AS (SELECT md.director_id, count(DISTINCT m.id) AS n FROM roles r JOIN actors a ON a.id = r.actor_id JOIN movies m ON m.id = r.movie_id JOIN movies_directors md ON md.movie_id = m.id WHERE a.first_name = 'Samuel L.' AND a.last_name = 'Jackson' GROUP BY md.director_id) SELECT d.first_name AS given, d.last_name AS family, c.n AS n FROM cnt c JOIN directors d ON d.id = c.director_id WHERE c.n = (SELECT max(n) FROM cnt)
+PREFIX :     <http://www.example.org/imdb#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT ?given ?family ?n
+WHERE {
+  {
+    SELECT ?d (COUNT(DISTINCT ?m) AS ?n)
+    WHERE {
+      ?a foaf:givenName "Samuel L." ;
+         foaf:familyName "Jackson" ;
+         :actedIn ?m .
+      ?m :hasDirector ?d .
+    }
+    GROUP BY ?d
+  }
+  {
+    SELECT (MAX(?c) AS ?max)
+    WHERE {
+      SELECT ?d2 (COUNT(DISTINCT ?m2) AS ?c)
+      WHERE {
+        ?a2 foaf:givenName "Samuel L." ;
+            foaf:familyName "Jackson" ;
+            :actedIn ?m2 .
+        ?m2 :hasDirector ?d2 .
+      }
+      GROUP BY ?d2
+    }
+  }
+  FILTER(?n = ?max)
+  ?d foaf:givenName ?given ;
+     foaf:familyName ?family .
+}
+ORDER BY ?family ?given

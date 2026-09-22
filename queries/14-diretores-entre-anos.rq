@@ -1,0 +1,22 @@
+# titulo: Diretores de filmes entre 1990 e 2005 com Samuel L. Jackson e Uma Thurman (mais antigo primeiro)
+# pergunta: Quais diretores dirigiram algum filme lançado entre 1990 e 2005 em que os atores Samuel L. Jackson e Uma Thurman aparecem, do mais antigo para o mais novo?
+# sql: SELECT DISTINCT d.first_name AS given, d.last_name AS family, m.year AS year, m.name AS title FROM movies m JOIN roles rx ON rx.movie_id = m.id JOIN actors ax ON ax.id = rx.actor_id JOIN roles ry ON ry.movie_id = m.id JOIN actors ay ON ay.id = ry.actor_id JOIN movies_directors md ON md.movie_id = m.id JOIN directors d ON d.id = md.director_id WHERE ax.first_name = 'Samuel L.' AND ax.last_name = 'Jackson' AND ay.first_name = 'Uma' AND ay.last_name = 'Thurman' AND m.year BETWEEN 1990 AND 2005
+PREFIX :     <http://www.example.org/imdb#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+
+SELECT DISTINCT ?given ?family ?year ?title
+WHERE {
+  ?x foaf:givenName "Samuel L." ;
+     foaf:familyName "Jackson" ;
+     :actedIn ?m .
+  ?y foaf:givenName "Uma" ;
+     foaf:familyName "Thurman" ;
+     :actedIn ?m .
+  ?m :title ?title ;
+     :releaseYear ?year ;
+     :hasDirector ?d .
+  ?d foaf:givenName ?given ;
+     foaf:familyName ?family .
+  FILTER(?year >= 1990 && ?year <= 2005)
+}
+ORDER BY ?year ?family ?given

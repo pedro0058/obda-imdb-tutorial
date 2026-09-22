@@ -1,0 +1,15 @@
+[project]
+name = "fois-tutorial"
+version = "0.1.0"
+description = "OBDA com Ontop sobre o dataset IMDB (imdb_ijs): ontologia OWL 2 QL, mapeamentos para Postgres e perguntas em linguagem natural via LLM local (Ollama)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT-0"
+dependencies = [
+    "adbc-driver-postgresql>=1.12.0",
+    "connectorx>=0.4.5",
+    "ollama>=0.6.2",
+    "polars>=1.44.2",
+    "pyarrow>=25.0.1",
+    "rdflib>=7.6.0",
+]

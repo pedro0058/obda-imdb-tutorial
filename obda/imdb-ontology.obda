@@ -1,0 +1,57 @@
+[PrefixDeclaration]
+:		http://www.example.org/imdb#
+data:	http://www.example.org/imdb/data/
+foaf:	http://xmlns.com/foaf/0.1/
+rdf:	http://www.w3.org/1999/02/22-rdf-syntax-ns#
+rdfs:	http://www.w3.org/2000/01/rdf-schema#
+xsd:	http://www.w3.org/2001/XMLSchema#
+
+[MappingDeclaration] @collection [[
+mappingId	actor-names
+target		data:actor/{id} foaf:givenName {first_name}^^xsd:string ; foaf:familyName {last_name}^^xsd:string .
+source		SELECT id, first_name, last_name FROM actors
+
+mappingId	director-names
+target		data:director/{id} a foaf:Person ; foaf:givenName {first_name}^^xsd:string ; foaf:familyName {last_name}^^xsd:string .
+source		SELECT id, first_name, last_name FROM directors
+
+mappingId	movies
+target		data:movie/{id} a :Movie ; :title {name}^^xsd:string ; :releaseYear {year}^^xsd:integer .
+source		SELECT id, name, year FROM movies
+
+mappingId	movie-rank
+target		data:movie/{id} :rank {rank}^^xsd:decimal .
+source		SELECT id, ROUND(rank::numeric, 1) AS rank FROM movies WHERE rank IS NOT NULL
+
+mappingId	genre-labels
+target		data:genre/{genre} rdfs:label {genre}@en .
+source		SELECT genre FROM movies_genres UNION SELECT genre FROM directors_genres
+
+mappingId	movie-genres
+target		data:movie/{movie_id} :hasGenre data:genre/{genre} .
+source		SELECT movie_id, genre FROM movies_genres
+
+mappingId	movie-directors
+target		data:director/{director_id} :directed data:movie/{movie_id} .
+source		SELECT director_id, movie_id FROM movies_directors
+
+mappingId	acted-in
+target		data:actor/{actor_id} :actedIn data:movie/{movie_id} .
+source		SELECT actor_id, movie_id FROM roles
+
+mappingId	performances
+target		data:performance/{actor_id}/{movie_id}/{role} :performer data:actor/{actor_id} ; :performanceIn data:movie/{movie_id} .
+source		SELECT actor_id, movie_id, role FROM roles
+
+mappingId	performance-character
+target		data:performance/{actor_id}/{movie_id}/{role} :characterName {role}^^xsd:string .
+source		SELECT actor_id, movie_id, role FROM roles WHERE role <> ''
+
+mappingId	director-genre-affinity
+target		data:director/{director_id} :hasGenreAffinity data:genre/{genre} .
+source		SELECT director_id, genre FROM directors_genres
+
+mappingId	genre-affinities
+target		data:director/{director_id}/genre-affinity/{genre} :affinityDirector data:director/{director_id} ; :affinityGenre data:genre/{genre} ; :affinityScore {prob}^^xsd:decimal .
+source		SELECT director_id, genre, prob::numeric AS prob FROM directors_genres
+]]

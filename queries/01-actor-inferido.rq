@@ -1,0 +1,8 @@
+# titulo: Tipagem inferida de :Actor (nenhuma tripla rdf:type :Actor nos mapeamentos)
+# pergunta: Quantos atores existem na base?
+# mostrar-sql: sim
+# sql: SELECT COUNT(DISTINCT actor_id) AS n FROM roles
+PREFIX : <http://www.example.org/imdb#>
+
+SELECT (COUNT(DISTINCT ?x) AS ?n)
+WHERE { ?x a :Actor }

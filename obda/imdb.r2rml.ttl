@@ -1,0 +1,249 @@
+@prefix rr: <http://www.w3.org/ns/r2rml#> .
+@prefix : <http://www.example.org/imdb#> .
+@prefix data: <http://www.example.org/imdb/data/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix obda: <https://w3id.org/obda/vocabulary#> .
+
+<urn:r2rml:actor-names> a rr:TriplesMap;
+  rr:logicalTable [ a rr:R2RMLView;
+      rr:sqlQuery "SELECT id, first_name, last_name FROM actors"
+    ];
+  rr:predicateObjectMap [ a rr:PredicateObjectMap;
+      rr:objectMap [ a rr:TermMap, rr:ObjectMap;
+          rr:datatype xsd:string;
+          rr:termType rr:Literal;
+          rr:column "last_name"
+        ];
+      rr:predicate foaf:familyName
+    ], [ a rr:PredicateObjectMap;
+      rr:objectMap [ a rr:TermMap, rr:ObjectMap;
+          rr:column "first_name";
+          rr:termType rr:Literal;
+          rr:datatype xsd:string
+        ];
+      rr:predicate foaf:givenName
+    ];
+  rr:subjectMap [ a rr:SubjectMap, rr:TermMap;
+      rr:termType rr:IRI;
+      rr:template "http://www.example.org/imdb/data/actor/{id}"
+    ] .
+
+<urn:r2rml:director-names> a rr:TriplesMap;
+  rr:subjectMap [ a rr:TermMap, rr:SubjectMap;
+      rr:termType rr:IRI;
+      rr:class foaf:Person;
+      rr:template "http://www.example.org/imdb/data/director/{id}"
+    ];
+  rr:predicateObjectMap [ a rr:PredicateObjectMap;
+      rr:objectMap [ a rr:ObjectMap, rr:TermMap;
+          rr:column "last_name";
+          rr:termType rr:Literal;
+          rr:datatype xsd:string
+        ];
+      rr:predicate foaf:familyName
+    ], [ a rr:PredicateObjectMap;
+      rr:predicate foaf:givenName;
+      rr:objectMap [ a rr:TermMap, rr:ObjectMap;
+          rr:column "first_name";
+          rr:termType rr:Literal;
+          rr:datatype xsd:string
+        ]
+    ];
+  rr:logicalTable [ a rr:R2RMLView;
+      rr:sqlQuery "SELECT id, first_name, last_name FROM directors"
+    ] .
+
+<urn:r2rml:movies> a rr:TriplesMap;
+  rr:predicateObjectMap [ a rr:PredicateObjectMap;
+      rr:objectMap [ a rr:ObjectMap, rr:TermMap;
+          rr:column "year";
+          rr:datatype xsd:integer;
+          rr:termType rr:Literal
+        ];
+      rr:predicate :releaseYear
+    ], [ a rr:PredicateObjectMap;
+      rr:objectMap [ a rr:ObjectMap, rr:TermMap;
+          rr:datatype xsd:string;
+          rr:column "name";
+          rr:termType rr:Literal
+        ];
+      rr:predicate :title
+    ];
+  rr:subjectMap [ a rr:SubjectMap, rr:TermMap;
+      rr:termType rr:IRI;
+      rr:class :Movie;
+      rr:template "http://www.example.org/imdb/data/movie/{id}"
+    ];
+  rr:logicalTable [ a rr:R2RMLView;
+      rr:sqlQuery "SELECT id, name, year FROM movies"
+    ] .
+
+<urn:r2rml:movie-rank> a rr:TriplesMap;
+  rr:logicalTable [ a rr:R2RMLView;
+      rr:sqlQuery "SELECT id, ROUND(rank::numeric, 1) AS rank FROM movies WHERE rank IS NOT NULL"
+    ];
+  rr:subjectMap [ a rr:TermMap, rr:SubjectMap;
+      rr:template "http://www.example.org/imdb/data/movie/{id}";
+      rr:termType rr:IRI
+    ];
+  rr:predicateObjectMap [ a rr:PredicateObjectMap;
+      rr:objectMap [ a rr:ObjectMap, rr:TermMap;
+          rr:datatype xsd:decimal;
+          rr:termType rr:Literal;
+          rr:column "rank"
+        ];
+      rr:predicate :rank
+    ] .
+
+<urn:r2rml:genre-labels> a rr:TriplesMap;
+  rr:subjectMap [ a rr:SubjectMap, rr:TermMap;
+      rr:termType rr:IRI;
+      rr:template "http://www.example.org/imdb/data/genre/{genre}"
+    ];
+  rr:predicateObjectMap [ a rr:PredicateObjectMap;
+      rr:predicate rdfs:label;
+      rr:objectMap [ a rr:TermMap, rr:ObjectMap;
+          rr:column "genre";
+          rr:termType rr:Literal;
+          rr:language "en"
+        ]
+    ];
+  rr:logicalTable [ a rr:R2RMLView;
+      rr:sqlQuery "SELECT genre FROM movies_genres UNION SELECT genre FROM directors_genres"
+    ] .
+
+<urn:r2rml:movie-genres> a rr:TriplesMap;
+  rr:predicateObjectMap [ a rr:PredicateObjectMap;
+      rr:objectMap [ a rr:ObjectMap, rr:TermMap;
+          rr:template "http://www.example.org/imdb/data/genre/{genre}";
+          rr:termType rr:IRI
+        ];
+      rr:predicate :hasGenre
+    ];
+  rr:logicalTable [ a rr:R2RMLView;
+      rr:sqlQuery "SELECT movie_id, genre FROM movies_genres"
+    ];
+  rr:subjectMap [ a rr:TermMap, rr:SubjectMap;
+      rr:template "http://www.example.org/imdb/data/movie/{movie_id}";
+      rr:termType rr:IRI
+    ] .
+
+<urn:r2rml:movie-directors> a rr:TriplesMap;
+  rr:predicateObjectMap [ a rr:PredicateObjectMap;
+      rr:objectMap [ a rr:TermMap, rr:ObjectMap;
+          rr:template "http://www.example.org/imdb/data/movie/{movie_id}";
+          rr:termType rr:IRI
+        ];
+      rr:predicate :directed
+    ];
+  rr:logicalTable [ a rr:R2RMLView;
+      rr:sqlQuery "SELECT director_id, movie_id FROM movies_directors"
+    ];
+  rr:subjectMap [ a rr:TermMap, rr:SubjectMap;
+      rr:template "http://www.example.org/imdb/data/director/{director_id}";
+      rr:termType rr:IRI
+    ] .
+
+<urn:r2rml:acted-in> a rr:TriplesMap;
+  rr:subjectMap [ a rr:TermMap, rr:SubjectMap;
+      rr:template "http://www.example.org/imdb/data/actor/{actor_id}";
+      rr:termType rr:IRI
+    ];
+  rr:logicalTable [ a rr:R2RMLView;
+      rr:sqlQuery "SELECT actor_id, movie_id FROM roles"
+    ];
+  rr:predicateObjectMap [ a rr:PredicateObjectMap;
+      rr:objectMap [ a rr:ObjectMap, rr:TermMap;
+          rr:template "http://www.example.org/imdb/data/movie/{movie_id}";
+          rr:termType rr:IRI
+        ];
+      rr:predicate :actedIn
+    ] .
+
+<urn:r2rml:performances> a rr:TriplesMap;
+  rr:predicateObjectMap [ a rr:PredicateObjectMap;
+      rr:predicate :performer;
+      rr:objectMap [ a rr:TermMap, rr:ObjectMap;
+          rr:template "http://www.example.org/imdb/data/actor/{actor_id}";
+          rr:termType rr:IRI
+        ]
+    ], [ a rr:PredicateObjectMap;
+      rr:objectMap [ a rr:TermMap, rr:ObjectMap;
+          rr:template "http://www.example.org/imdb/data/movie/{movie_id}";
+          rr:termType rr:IRI
+        ];
+      rr:predicate :performanceIn
+    ];
+  rr:logicalTable [ a rr:R2RMLView;
+      rr:sqlQuery "SELECT actor_id, movie_id, role FROM roles"
+    ];
+  rr:subjectMap [ a rr:TermMap, rr:SubjectMap;
+      rr:template "http://www.example.org/imdb/data/performance/{actor_id}/{movie_id}/{role}";
+      rr:termType rr:IRI
+    ] .
+
+<urn:r2rml:performance-character> a rr:TriplesMap;
+  rr:predicateObjectMap [ a rr:PredicateObjectMap;
+      rr:predicate :characterName;
+      rr:objectMap [ a rr:TermMap, rr:ObjectMap;
+          rr:datatype xsd:string;
+          rr:termType rr:Literal;
+          rr:column "role"
+        ]
+    ];
+  rr:subjectMap [ a rr:SubjectMap, rr:TermMap;
+      rr:termType rr:IRI;
+      rr:template "http://www.example.org/imdb/data/performance/{actor_id}/{movie_id}/{role}"
+    ];
+  rr:logicalTable [ a rr:R2RMLView;
+      rr:sqlQuery "SELECT actor_id, movie_id, role FROM roles WHERE role <> ''"
+    ] .
+
+<urn:r2rml:director-genre-affinity> a rr:TriplesMap;
+  rr:logicalTable [ a rr:R2RMLView;
+      rr:sqlQuery "SELECT director_id, genre FROM directors_genres"
+    ];
+  rr:subjectMap [ a rr:TermMap, rr:SubjectMap;
+      rr:template "http://www.example.org/imdb/data/director/{director_id}";
+      rr:termType rr:IRI
+    ];
+  rr:predicateObjectMap [ a rr:PredicateObjectMap;
+      rr:predicate :hasGenreAffinity;
+      rr:objectMap [ a rr:TermMap, rr:ObjectMap;
+          rr:termType rr:IRI;
+          rr:template "http://www.example.org/imdb/data/genre/{genre}"
+        ]
+    ] .
+
+<urn:r2rml:genre-affinities> a rr:TriplesMap;
+  rr:logicalTable [ a rr:R2RMLView;
+      rr:sqlQuery "SELECT director_id, genre, prob::numeric AS prob FROM directors_genres"
+    ];
+  rr:predicateObjectMap [ a rr:PredicateObjectMap;
+      rr:objectMap [ a rr:TermMap, rr:ObjectMap;
+          rr:template "http://www.example.org/imdb/data/genre/{genre}";
+          rr:termType rr:IRI
+        ];
+      rr:predicate :affinityGenre
+    ], [ a rr:PredicateObjectMap;
+      rr:predicate :affinityScore;
+      rr:objectMap [ a rr:TermMap, rr:ObjectMap;
+          rr:termType rr:Literal;
+          rr:column "prob";
+          rr:datatype xsd:decimal
+        ]
+    ], [ a rr:PredicateObjectMap;
+      rr:objectMap [ a rr:TermMap, rr:ObjectMap;
+          rr:template "http://www.example.org/imdb/data/director/{director_id}";
+          rr:termType rr:IRI
+        ];
+      rr:predicate :affinityDirector
+    ];
+  rr:subjectMap [ a rr:SubjectMap, rr:TermMap;
+      rr:template "http://www.example.org/imdb/data/director/{director_id}/genre-affinity/{genre}";
+      rr:termType rr:IRI
+    ] .

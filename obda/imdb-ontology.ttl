@@ -1,0 +1,170 @@
+@prefix :        <http://www.example.org/imdb#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix foaf:    <http://xmlns.com/foaf/0.1/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix vann:    <http://purl.org/vocab/vann/> .
+
+#################################################################
+#    Metadados da ontologia
+#################################################################
+
+<http://www.example.org/imdb> a owl:Ontology ;
+    owl:versionIRI <http://www.example.org/imdb/0.1.0> ;
+    owl:versionInfo "0.1.0" ;
+    dcterms:title "Ontologia IMDB (imdb_ijs)"@pt , "IMDB Ontology (imdb_ijs)"@en ;
+    dcterms:description "Ontologia leve (OWL 2 QL) para acesso a dados baseado em ontologias (OBDA) com Ontop sobre o dataset relacional imdb_ijs."@pt ;
+    dcterms:creator "pedro0058" ;
+    dcterms:license <http://creativecommons.org/publicdomain/zero/1.0/> ;
+    dcterms:created "2026-09-14"^^xsd:date ;
+    dcterms:source <https://relational.fel.cvut.cz/dataset/IMDb> ;
+    vann:preferredNamespacePrefix "imdb" ;
+    vann:preferredNamespaceUri "http://www.example.org/imdb#" ;
+    rdfs:comment "Ontologia leve (OWL 2 QL) para o dataset IMDB (imdb_ijs), reaproveitando termos do FOAF sem importar o arquivo OWL completo dessa ontologia."@pt .
+
+dcterms:title a owl:AnnotationProperty .
+dcterms:description a owl:AnnotationProperty .
+dcterms:creator a owl:AnnotationProperty .
+dcterms:license a owl:AnnotationProperty .
+dcterms:created a owl:AnnotationProperty .
+dcterms:source a owl:AnnotationProperty .
+vann:preferredNamespacePrefix a owl:AnnotationProperty .
+vann:preferredNamespaceUri a owl:AnnotationProperty .
+
+#################################################################
+#    Termos reaproveitados (FOAF)
+#    Declarados exatamente como na especificação FOAF 0.99, sem
+#    axiomas adicionais, para não restringir termos de terceiros.
+#################################################################
+
+foaf:Person a owl:Class .
+foaf:givenName a owl:DatatypeProperty .
+foaf:familyName a owl:DatatypeProperty ; rdfs:domain foaf:Person ; rdfs:range rdfs:Literal .
+
+#################################################################
+#    Classes
+#################################################################
+
+:Actor a owl:Class ;
+    rdfs:subClassOf foaf:Person ;
+    rdfs:label "Ator"@pt , "Actor"@en ;
+    rdfs:comment "Pessoa que atuou em pelo menos um filme (inferido via domínio de :actedIn, não materializado na fonte)."@pt .
+
+:Director a owl:Class ;
+    rdfs:subClassOf foaf:Person ;
+    rdfs:label "Diretor"@pt , "Director"@en ;
+    rdfs:comment "Pessoa que dirigiu pelo menos um filme (inferido via domínio de :directed)."@pt .
+
+:Movie a owl:Class ;
+    rdfs:label "Filme"@pt , "Movie"@en ;
+    rdfs:comment "Uma obra audiovisual catalogada no IMDb. Vem da tabela movies."@pt .
+
+:Genre a owl:Class ;
+    rdfs:label "Gênero cinematográfico"@pt , "Film genre"@en ;
+    rdfs:comment "Um gênero cinematográfico, tratado como indivíduo (não como literal) para permitir navegação e futura hierarquia."@pt .
+
+:Performance a owl:Class ;
+    rdfs:label "Atuação"@pt , "Performance"@en ;
+    rdfs:comment "Participação de um ator em um filme interpretando um personagem (padrão de relação n-ária do W3C). Vem da tabela roles: cada linha (actor_id, movie_id, role) é uma atuação. Complementa :actedIn, que é o atalho binário ator→filme."@pt .
+
+:GenreAffinity a owl:Class ;
+    rdfs:label "Afinidade de gênero"@pt , "Genre affinity"@en ;
+    rdfs:comment "Relação qualificada entre um diretor e um gênero, com um escore (padrão de relação n-ária do W3C). Vem da tabela directors_genres. Complementa :hasGenreAffinity, que é o atalho binário diretor→gênero."@pt .
+
+#################################################################
+#    Propriedades de objeto
+#################################################################
+
+:actedIn a owl:ObjectProperty ;
+    rdfs:domain :Actor ;
+    rdfs:range :Movie ;
+    rdfs:label "atuou em"@pt , "acted in"@en ;
+    rdfs:comment "Vem da tabela roles. Ninguém é explicitamente tipado :Actor na fonte — o tipo é inferido pelo domínio desta propriedade."@pt .
+
+:hasActor a owl:ObjectProperty ;
+    owl:inverseOf :actedIn ;
+    rdfs:label "tem ator"@pt , "has actor"@en ;
+    rdfs:comment "Inversa de :actedIn."@pt .
+
+:directed a owl:ObjectProperty ;
+    rdfs:domain :Director ;
+    rdfs:range :Movie ;
+    rdfs:label "dirigiu"@pt , "directed"@en ;
+    rdfs:comment "Vem de movies_directors. Mesmo padrão de inferência de tipo que :actedIn."@pt .
+
+:hasDirector a owl:ObjectProperty ;
+    owl:inverseOf :directed ;
+    rdfs:label "tem diretor"@pt , "has director"@en ;
+    rdfs:comment "Inversa de :directed."@pt .
+
+:hasGenre a owl:ObjectProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range :Genre ;
+    rdfs:label "tem gênero"@pt , "has genre"@en ;
+    rdfs:comment "Vem de movies_genres."@pt .
+
+:hasGenreAffinity a owl:ObjectProperty ;
+    rdfs:domain :Director ;
+    rdfs:range :Genre ;
+    rdfs:label "tem afinidade com o gênero"@pt , "has genre affinity"@en ;
+    rdfs:comment "Vem de directors_genres. Propriedade distinta de :hasGenre para não confundir 'gênero do filme' com 'afinidade do diretor a um gênero'."@pt .
+
+:performer a owl:ObjectProperty ;
+    rdfs:domain :Performance ;
+    rdfs:range :Actor ;
+    rdfs:label "intérprete"@pt , "performer"@en ;
+    rdfs:comment "Liga uma atuação ao ator. Vem de roles.actor_id. O range também tipa o ator como :Actor por inferência."@pt .
+
+:performanceIn a owl:ObjectProperty ;
+    rdfs:domain :Performance ;
+    rdfs:range :Movie ;
+    rdfs:label "atuação no filme"@pt , "performance in"@en ;
+    rdfs:comment "Liga uma atuação ao filme. Vem de roles.movie_id."@pt .
+
+:affinityDirector a owl:ObjectProperty ;
+    rdfs:domain :GenreAffinity ;
+    rdfs:range :Director ;
+    rdfs:label "diretor da afinidade"@pt , "affinity director"@en ;
+    rdfs:comment "Liga uma afinidade de gênero ao diretor. Vem de directors_genres.director_id."@pt .
+
+:affinityGenre a owl:ObjectProperty ;
+    rdfs:domain :GenreAffinity ;
+    rdfs:range :Genre ;
+    rdfs:label "gênero da afinidade"@pt , "affinity genre"@en ;
+    rdfs:comment "Liga uma afinidade de gênero ao gênero. Vem de directors_genres.genre."@pt .
+
+#################################################################
+#    Propriedades de dados
+#################################################################
+
+:title a owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:string ;
+    rdfs:label "título"@pt , "title"@en ;
+    rdfs:comment "Título do filme. Vem de movies.name."@pt .
+
+:releaseYear a owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:integer ;
+    rdfs:label "ano de lançamento"@pt , "release year"@en ;
+    rdfs:comment "Ano de lançamento do filme. Vem de movies.year."@pt .
+
+:rank a owl:DatatypeProperty ;
+    rdfs:domain :Movie ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "nota IMDb"@pt , "IMDb rank"@en ;
+    rdfs:comment "Nota média do filme no IMDb, de 1 a 9.9. Vem de movies.rank; ausente para a maioria dos filmes (NULL na fonte, sem tripla gerada)."@pt .
+
+:characterName a owl:DatatypeProperty ;
+    rdfs:domain :Performance ;
+    rdfs:range xsd:string ;
+    rdfs:label "nome do personagem"@pt , "character name"@en ;
+    rdfs:comment "Personagem interpretado na atuação. Vem de roles.role; strings vazias na fonte não geram tripla."@pt .
+
+:affinityScore a owl:DatatypeProperty ;
+    rdfs:domain :GenreAffinity ;
+    rdfs:range xsd:decimal ;
+    rdfs:label "escore de afinidade"@pt , "affinity score"@en ;
+    rdfs:comment "Escore da afinidade do diretor ao gênero, em (0, 1]. Vem de directors_genres.prob."@pt .
