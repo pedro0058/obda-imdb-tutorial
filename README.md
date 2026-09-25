@@ -190,7 +190,7 @@ published by compose:
 | Username | `imdb` |
 | Password | `imdb` |
 | Driver class | `org.postgresql.Driver` |
-| Driver JAR | `jdbc/postgresql-42.7.13.jar` (downloaded by `docker compose up`) |
+| Driver JAR | `jdbc/postgresql-42.7.13.jar` (included in the repository) |
 
 Register the JAR under *Preferences → JDBC Drivers* before opening the **Ontop Mappings**
 tab.
